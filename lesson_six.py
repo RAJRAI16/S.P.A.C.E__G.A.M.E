@@ -23,14 +23,14 @@ pygame.display.set_caption("Space Invader")
 icon = pygame.image.load('ufo.png')
 pygame.display.set_icon(icon)
 
-# Score
+
 score_value = 0
 font = pygame.font.Font('freesansbold.ttf', 32)
 
 textX = 10
 testY = 10
 
-# Player
+
 playerImg = pygame.image.load('player.png')
 playerX = 370
 playerY = 480
@@ -39,7 +39,7 @@ playerX_change = 0
 def player(x, y):
     screen.blit(playerImg, (x, y))
 
-# Enemy
+
 enemyImg = []
 enemyX = []
 enemyY = []
@@ -47,7 +47,7 @@ enemyX_change = []
 enemyY_change = []
 num_of_enemies = 6
 
-# create enemies
+
 for i in range(num_of_enemies):
     enemyImg.append(pygame.image.load('enemy.png'))
     enemyX.append(random.randint(0, 736))
@@ -62,10 +62,7 @@ def show_score(x, y):
     score = font.render("Score : " + str(score_value), True, (255, 255, 255))
     screen.blit(score, (x, y))
 
-# Bullet
 
-# Ready - You can't see the bullet on the screen
-# Fire - The bullet is currently moving
 
 bulletImg = pygame.image.load('bullet.png')
 bulletX = 0
@@ -74,13 +71,13 @@ bulletX_change = 0
 bulletY_change = 10
 bullet_state = "ready"
 
-# draw bullet
+
 def fire_bullet(x, y):
     global bullet_state
     bullet_state = "fire"
     screen.blit(bulletImg, (x + 16, y + 10))
 
-# collision detection, find distance between (x1,y1) and (x2,y2)
+
 def isCollision(enemyX, enemyY, bulletX, bulletY):
     distance = math.sqrt(math.pow(enemyX - bulletX, 2) + (math.pow(enemyY - bulletY, 2)))
     if distance < 27:
@@ -90,15 +87,15 @@ def isCollision(enemyX, enemyY, bulletX, bulletY):
 
 def set_background():
     global background
-    # RGB = Red, Green, Blue
+    
     screen.fill((0, 0, 0))
 
-    # Background Image
+    
     screen.blit(background, (0, 0))
 
 def move_bullet():
     global bulletX, bulletY, bullet_state
-    # Bullet Movement
+    
     if bulletY <= 1:
         bulletY = 480
         bullet_state = "ready"
@@ -113,7 +110,7 @@ def game_input():
         if event.type == pygame.QUIT:
             running = False
 
-        # if keystroke is pressed check whether its right or left
+        
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 playerX_change = -5
@@ -139,7 +136,7 @@ def game_input():
 
 def enemy_movement():
     global enemyX, enemyX_change, enemyY, enemyY_change
-    # Enemy Movement
+    
     for i in range(num_of_enemies):
 
         enemyX[i] += enemyX_change[i]
@@ -151,51 +148,59 @@ def enemy_movement():
             enemyY[i] += enemyY_change[i]
  
         enemy(enemyX[i], enemyY[i], i)
+ 
+def game_over():
+    global running
+    running = False  
+
+    
+    game_over_font = pygame.font.Font('freesansbold.ttf', 64)
+    game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
+    screen.blit(game_over_text, (200, 250))
+
+    # Display final score
+    final_score_text = font.render(f"Final Score: {score_value}", True, (255, 255, 255))
+    screen.blit(final_score_text, (280, 320))
+
+    pygame.display.update()  
+
+    
+    pygame.time.delay(3000)  
+    pygame.quit()  
+    exit()  
+
 
 def collision():
     global num_of_enemies, enemyX, enemyY, bulletX, bulletY, bullet_state, score_value
+
     for i in range(num_of_enemies):
-        # Collision
-        collision = isCollision(enemyX[i], enemyY[i], bulletX, bulletY)
-        if collision:
+        
+        player_hit = isCollision(enemyX[i], enemyY[i], playerX, playerY)
+        if player_hit:
+            explosionSound = mixer.Sound("explosion.wav")
+            explosionSound.play()
+            game_over()  
+            return  
+
+        
+        bullet_hit = isCollision(enemyX[i], enemyY[i], bulletX, bulletY)
+        if bullet_hit:
             explosionSound = mixer.Sound("explosion.wav")
             explosionSound.play()
             bulletY = 480
             bullet_state = "ready"
-            score_value += 1
+            score_value += 1  
+
+            
             enemyX[i] = random.randint(0, 736)
             enemyY[i] = random.randint(50, 150)
 
-def game_over():
-    global running
-    running = False  # Stop the game loop
-    screen.fill((0, 0, 0))  # Clear screen
-    over_font = pygame.font.Font('freesansbold.ttf', 64)
-    text = over_font.render("GAME OVER", True, (255, 0, 0))
-    screen.blit(text, (200, 250))
-    
-    score_text = font.render(f"Final Score: {score_value}", True, (255, 255, 255))
-    screen.blit(score_text, (300, 330))
-    
-    pygame.display.update()  # Refresh the screen
-    pygame.time.delay(3000)  # Wait for 3 seconds before closing
-
-def check_player_collision():
-    global playerX, playerY, running
-    for i in range(num_of_enemies):
-        if isCollision(enemyX[i], enemyY[i], playerX, playerY):  # Check if enemy touches player
-            explosionSound = mixer.Sound("explosion.wav")
-            explosionSound.play()
-            game_over()
-
-# Game Loop
 running = True
 while running:
     set_background()
     game_input() 
     enemy_movement()
     collision()
-    check_player_collision() 
     move_bullet()
     player(playerX, playerY)
     show_score(textX, testY)
